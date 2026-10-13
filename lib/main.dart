@@ -12,14 +12,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Pemograman Lintas Platform',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       home: const MyHomePage(
-        title: 'Flutter Demo Home Page',
+        title: 'Pemograman Lintas Platform',
       ),
     );
   }
@@ -38,38 +36,47 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _click = -1; // Menyimpan indeks tombol yang sedang diklik
+  int _counter = 0; // Menghitung total klik
+  int _click = -1;  // Menandai tombol aktif (-1 artinya belum ada yang diklik)
 
   final AudioPlayer _player = AudioPlayer();
 
-  // Warna AppBar
-  Color _topColor = Colors.red;
+  // Link gambar ikon di dalam tombol
+  final String _imageUrl = 'https://i.imgur.com/Yf4NKrK.png';
 
-  // Daftar warna dasar
-  final List<Color> _colorList = [
+  // Daftar nama file suara sesuai dengan yang ada di folder assets/sounds/ Anda
+  final List<String> _soundFiles = [
+    'Kick.wav',   // Tombol 0 (Merah)
+    'Ride.wav',   // Tombol 1 (Biru)
+    'Snare.wav',  // Tombol 2 (Hijau)
+    'Tom.wav',    // Tombol 3 (Kuning)
+  ];
+
+  // Daftar warna untuk 4 tombol [Merah, Biru, Hijau, Kuning]
+  final List<Color> _buttonColors = [
     Colors.red,
     Colors.blue,
     Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.teal,
-    Colors.pink,
-    Colors.yellow,
+    Colors.amber, // Kuning
   ];
 
-  // Link gambar
-  final String _imageUrl = 'https://i.imgur.com/Yf4NKrK.png';
-
-  // Fungsi saat salah satu tombol dari 28 tombol diklik
+  // Fungsi saat tombol diklik untuk memutar suara dan menambah hitungan
   void _playAudio(int index) async {
     await _player.stop();
-    await _player.play(
-      UrlSource('assets/assets/sounds/jokowi.mp3'),
-    );
+    // Menggunakan AssetSource agar membaca file lokal dari folder assets/sounds/
+    await _player.play(AssetSource('sounds/${_soundFiles[index]}'));
 
     setState(() {
-      _click = index; // Menandai tombol yang sedang aktif diklik
-      _topColor = (_colorList..shuffle()).first; // Mengubah warna AppBar
+      _counter++;
+      _click = index; // Menandai tombol yang sedang diklik agar berubah jadi abu-abu
+    });
+  }
+
+  // Fungsi untuk mereset counter & warna tombol
+  void _resetCounter() {
+    setState(() {
+      _counter = 0;
+      _click = -1;
     });
   }
 
@@ -79,82 +86,113 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: _topColor,
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            color: Colors.white,
-          ),
+  // Widget bantuan untuk membuat tombol lingkaran
+  Widget _buildCircularButton({
+    required int index,
+    required Color defaultColor,
+  }) {
+    bool isClicked = (index == _click);
+    // Jika tombol diklik, warnanya jadi abu-abu. Jika tidak, pakai warna aslinya.
+    Color currentColor = isClicked ? Colors.grey : defaultColor;
+
+    return GestureDetector(
+      onTap: () => _playAudio(index),
+      child: Container(
+        width: 130,
+        height: 130,
+        decoration: BoxDecoration(
+          color: currentColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-      ),
-
-      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Menghitung rasio lebar & tinggi otomatis agar 7 kolom x 4 baris pas 1 layar
-              double itemWidth = (constraints.maxWidth - (6 * 8)) / 7;
-              double itemHeight = (constraints.maxHeight - (3 * 8)) / 4;
-              double aspectRatio = itemWidth / itemHeight;
-
-              return GridView.count(
-                physics: const NeverScrollableScrollPhysics(), // Mematikan scroll
-                crossAxisCount: 7, // 7 kolom
-                childAspectRatio: aspectRatio, // Rasio dinamis pas 1 layar
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                children: List.generate(
-                  28,
-                      (i) {
-                    return GestureDetector(
-                      onTap: () => _playAudio(i),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.white,
-                              (i == _click)
-                                  ? Colors.black
-                                  : ((i % 7 == 0)
-                                  ? Colors.red
-                                  : ((i % 7 == 1)
-                                  ? Colors.orange
-                                  : ((i % 7 == 2)
-                                  ? Colors.yellow
-                                  : Colors.blue))),
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Image.network(
-                              _imageUrl,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.image,
-                                  color: Colors.white,
-                                  size: 30,
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          padding: const EdgeInsets.all(25.0),
+          child: Image.network(
+            _imageUrl,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(
+                Icons.music_note,
+                color: Colors.white,
+                size: 40,
               );
             },
           ),
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.indigo,
+        title: Text(
+          widget.title,
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+      backgroundColor: const Color(0xFFF7F5DC), // Warna latar belakang krem
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Baris 1: Tombol Merah & Biru
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildCircularButton(index: 0, defaultColor: _buttonColors[0]),
+                const SizedBox(width: 20),
+                _buildCircularButton(index: 1, defaultColor: _buttonColors[1]),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Baris 2: Tombol Hijau & Kuning
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildCircularButton(index: 2, defaultColor: _buttonColors[2]),
+                const SizedBox(width: 20),
+                _buildCircularButton(index: 3, defaultColor: _buttonColors[3]),
+              ],
+            ),
+            const SizedBox(height: 40),
+
+            // Teks Jumlah Klik
+            const Text(
+              'You have pushed the button this many times:',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$_counter',
+              style: const TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // Tombol Reset di Kanan Bawah
+      floatingActionButton: FloatingActionButton(
+        onPressed: _resetCounter,
+        backgroundColor: Colors.redAccent,
+        tooltip: 'Reset',
+        child: const Icon(Icons.refresh, color: Colors.white),
       ),
     );
   }
